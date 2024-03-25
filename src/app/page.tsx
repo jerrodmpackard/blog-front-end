@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Button, Checkbox, Label, TextInput } from 'flowbite-react';
 import { useRouter } from "next/navigation";
-import NavbarComponent from "./Components/NavBarComponent";
+import NavbarComponent from "./Components/NavbarComponent";
+import { createAccount, getLoggedInUserData, login } from "@/utils/DataServices";
+import { IToken } from "@/Interfaces/Interfaces";
 
 // Be default, NextJS components are server side. (Server side components cannot have useStates in them)
 // 'use client' turns the component into a client component
@@ -27,7 +29,7 @@ export default function Home() {
     setSwitchBool(!switchBool);
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
 
     let userData = {
       // Putting our user data inside of an object so we can put it into our Post fetch later on
@@ -37,9 +39,26 @@ export default function Home() {
 
     if (switchBool) {
       // Create account logic in here
+      createAccount(userData);
 
     } else {
       // Login login in here
+
+      let token: IToken = await login(userData);
+
+      console.log(token);
+
+      // Check to see if logged in
+      if (token.token != null) {
+        // If we do successfully login, we want to navigate to our dashboard page
+        // Before we do that, we want to save our token to local storage
+        localStorage.setItem('Token', token.token);
+        // Then we call getLoggedInUserData and pass in our username (our useState)
+        getLoggedInUserData(username);
+      } else {
+        alert('Login Failed');
+      }
+
       router.push('/Dashboard')
     }
   }
@@ -48,7 +67,7 @@ export default function Home() {
   return (
     <>
       <NavbarComponent />
-      
+
       <div className="grid grid-flow-row justify-center mt-20">
         <div className="bg bg-slate-400 min-w-96 p-8 rounded-lg">
           {/* Ternary: if the boolean is true, it will render the left side of the colon. Else, it will render the right side */}

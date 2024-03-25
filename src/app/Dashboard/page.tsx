@@ -2,19 +2,22 @@
 // use client NEEDS to be at the top level of our file. Very first line of code
 
 import { Accordion, Button, Dropdown, FileInput, Label, ListGroup, Modal, TextInput } from 'flowbite-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import React from 'react'
 // The @ when pathing through our file structure inside an import signifies that you are accessing the root folder
 import BlogEntries from '@/utils/BlogEntries.json'
 import { IBlogItems } from '@/Interfaces/Interfaces';
-import NavbarComponent from '../Components/NavBarComponent';
+import NavbarComponent from '../Components/NavbarComponent';
+import { checkToken, getBlogItemsByUserID, loggedInData } from '@/utils/DataServices';
+import { useRouter } from 'next/navigation';
 
 // Think of this as the user's dashboard page with their published and unpublished blog entries
 // We would also like to be able to add/edit blog entries here
 const Dashboard = () => {
     const [openModal, setOpenModal] = useState(false);
     // We have to add the array to the IBlogItems because our .json data is in an array. It is an array of objects
-    const [blogItems, setBogItems] = useState<IBlogItems[]>(BlogEntries);
+    const [blogItems, setBlogItems] = useState<IBlogItems[]>([]);
+
 
     // We will need to create useState variables for description, tags, categories, title, and image
     const [title, setTitle] = useState<string>('');
@@ -22,9 +25,50 @@ const Dashboard = () => {
     const [tags, setTags] = useState<string>('');
     const [categories, setCategories] = useState<string>('');
     const [image, setImage] = useState<any>('');
+    // Adding useStates for id, publisher name, 
+    const [blogUserID, setBlogUserID] = useState<number>(0);
+    const [publisherName, setPublisherName] = useState<string>('');
+    const [blogID, setBlogID] = useState<number>(0);
+
+
 
     // Booleans
     const [editBool, setEditBool] = useState<boolean>(true);
+
+
+    // useRouter should be from next/navigation when you enter it/import it at the top of this page
+    let router = useRouter();
+
+
+    // Creating a useEffect to grab the user's information as well as their blog info
+    // It will perform a check if user is logged in. If not, it will takethem to the login page.
+    useEffect(() => {
+
+
+        // Async function because we are calling getBlogItemsByUserID fetch
+        const getLoggedInData = async () => {
+
+            // Storing our user info in a variable
+            const loggedIn = loggedInData();
+            let userBlogItems = await getBlogItemsByUserID(loggedIn.id);
+
+            // Setting our user info/fetched data inside of our state variables
+            setBlogUserID(loggedIn.id);
+            setPublisherName(loggedIn.username);
+            setBlogItems(userBlogItems);
+        }
+
+
+
+        // Checks if we have a token in local storage. If so, gets user info. Else, routes user back to login page
+        if (!checkToken()) {
+            getLoggedInData();
+        } else {
+            router.push('/');
+        }
+    }, [])
+
+
 
     // Make a function to open the modal and clear the previous inputs for all 5 input fields
     const handleShow = () => {
@@ -38,19 +82,23 @@ const Dashboard = () => {
         setImage('');
     }
 
+
     // Make a function to close the modal, save and publish, and also edit our blog items from the modal
     const handlePublish = () => {
         setOpenModal(false);
     }
+
 
     const handleEdit = () => {
         setEditBool(true);
         setOpenModal(true);
     }
 
+
     const handleDelete = () => {
 
     }
+
 
     // Now we need to create our helper functions for each of these
     const handleTitle = (e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value);
@@ -79,9 +127,9 @@ const Dashboard = () => {
 
             <div className='flex min-h-screen flex-col p-24'>
                 <div className="flex flex-col items-center mb-10">
-                    <h1 className='text-3xl'>This is Dashbaord</h1>
+                    <h1 className='text-3xl'>This is Dashboard</h1>
 
-                    <Button onClick={handleShow}>Add Blog Item</Button>
+                    <Button className='my-5' onClick={handleShow}>Add Blog Item</Button>
                     <Modal show={openModal} onClose={() => setOpenModal(false)}>
                         <Modal.Header>{editBool ? 'Edit' : 'Add'} Blog Item</Modal.Header>
                         <Modal.Body>
@@ -136,7 +184,8 @@ const Dashboard = () => {
                                         // We are mapping through blogItems (an array of objects)
                                         // For every item in our array, we are checking if the entry is published
                                         // If the entry/blog item is published, we will render it out inside of our accordion
-                                        blogItems.map((item, idx) => {
+                                        // Adding the double ampersand to check that blogItems exists before mapping through the array
+                                        blogItems && blogItems.map((item, idx) => {
 
                                             return (
                                                 // We MUST have this idx
@@ -173,7 +222,8 @@ const Dashboard = () => {
                                         // We are mapping through blogItems (an array of objects)
                                         // For every item in our array, we are checking if the entry is published
                                         // If the entry/blog item is published, we will render it out inside of our accordion
-                                        blogItems.map((item, idx) => {
+                                        // Adding the double ampersand to check that blogItems exists before mapping through the array
+                                        blogItems && blogItems.map((item, idx) => {
 
                                             return (
                                                 // We MUST have this idx
